@@ -1,9 +1,9 @@
 #include "Watchy_GSR.h"
 
 #include "analogTz.h"
-#include "bearTime.h"
-#include "tomPeterson.h"
-#include "timeScreen.h"
+//#include "bearTime.h"
+//#include "tomPeterson.h"
+//#include "timeScreen.h"
 #include "lsg.h"
 
 static const char UserAgent[] PROGMEM = "Watchy";
