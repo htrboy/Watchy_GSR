@@ -30,7 +30,7 @@
 
 //weather api - Update these to match your city/country/api key
 //get your free api key from: https://openweathermap.org/appid
-#define APIKEY "bda1d405549a8a2661ab1be15112730f" //use your own API key (this is MSM'S) 🙂
+#define APIKEY "YourAPIKeyHere" //use your own API key 
 #define URL "http://api.openweathermap.org/data/2.5/weather"
 #define COUNTRY "US"
 
