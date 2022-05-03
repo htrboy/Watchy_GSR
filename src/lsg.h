@@ -2,7 +2,6 @@
 // PORTED FROM CODE BY dr-mod, HERE:
 // https://github.com/dr-mod/little-sun-gazer
 // (dude is based in Kyiv)
-// на хуй Путін
 
 #include <math.h>
 #include <stdio.h>
