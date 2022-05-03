@@ -1,12 +1,15 @@
 #ifndef DEFINES_GSR_H
 #define DEFINES_GSR_H
 
+// Time Sync Server
+#define ntpServer "pool.ntp.org"
+
 //debug
-#define USEDEBUG 0  // !0 is on, will not setup Serial OR print output if zero.
+#define USEDEBUG 1  // 1 is on, will not setup Serial OR print output if zero.
 
 // WiFi
-#define WiFi_AP_SSID "Watchy Connect"
-#define WiFi_AP_PSWD "Watchy123"
+#define WiFi_AP_SSID "Watchy-Connect"
+#define WiFi_AP_PSWD "watchy123"
 #define WiFi_AP_HIDE false  // Hide "WiFi_AP_SSID" so it doesn't show up in the normal scan list.  IS NOT A SECURITY METHOD!
 #define WiFi_AP_MAXC 4      // Maximum user connections (default is 4).
 #define WiFi_SSID_MAX 32    // Do not change these two values.
@@ -17,11 +20,19 @@
 
 // Battery
 #define MaxBattery 4.37
+#define MinBattery 3.58
+#define LowBattery 3.45
 
 // functions
 #define roller(v,lo,hi) (((v)<(lo))?(hi):((v)>(hi))?(lo):(v))
 #define gobig(v,lo) ((v)>(lo)?(v):(lo))
 #define golow(v,hi) ((v)<(hi)?(v):(hi))
+
+//weather api - Update these to match your city/country/api key
+//get your free api key from: https://openweathermap.org/appid
+#define APIKEY "bda1d405549a8a2661ab1be15112730f" //use your own API key (this is MSM'S) 🙂
+#define URL "http://api.openweathermap.org/data/2.5/weather"
+#define COUNTRY "US"
 
 // Watch face states.
 #define WATCHON 0
@@ -30,9 +41,18 @@
 // Maximum styles possible.
 #define MaxStyles 25
 
-// Nenu size defines.
+// Menu size defines.
 #define MenuWidth 200
 #define MenuHeight 83
+
+// Base Fonts
+#define STATUSFONT Bronova_Regular13pt7b
+#define aAntiCorona12pt7b AntiCorona12pt7b
+#define aAntiCorona13pt7b AntiCorona13pt7b
+#define aAntiCorona14pt7b AntiCorona14pt7b
+#define aAntiCorona15pt7b AntiCorona15pt7b
+#define aAntiCorona16pt7b AntiCorona16pt7b
+#define aAntiCorona36pt7b AntiCorona36pt7b
 
 // Menu offsets so I don't have to statically entere them everywhere.
 #define MENU_STEPS 0
@@ -97,13 +117,16 @@
 #define EPD_RESET 9
 #define EPD_BUSY 19
 #define VIB_MOTOR_PIN 13
-#define MENU_PIN 26
-#define BACK_PIN 25
-#define DOWN_PIN 4
-#define MENU_MASK GPIO_SEL_26
-#define BACK_MASK GPIO_SEL_25
-#define DOWN_MASK GPIO_SEL_4
+#define MENU_BTN_PIN 26
+#define BACK_BTN_PIN 25
+#define UP_BTN_PIN 32
+#define DOWN_BTN_PIN 4
+#define MENU_BTN_MASK GPIO_SEL_26
+#define BACK_BTN_MASK GPIO_SEL_25
+#define UP_BTN_MASK GPIO_SEL_32
+#define DOWN_BTN_MASK GPIO_SEL_4
 #define ACC_INT_MASK GPIO_SEL_14
+#define BTN_PIN_MASK MENU_BTN_MASK|BACK_BTN_MASK|UP_BTN_MASK|DOWN_BTN_MASK
 
 //SetCPU defines.
 #define CPUMAX 65280
