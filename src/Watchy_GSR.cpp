@@ -1,12 +1,10 @@
 #include "Watchy_GSR.h"
 
 #include "analogTz.h"
-#include "bearTime.h"
-#include "tomPeterson.h"
-#include "timeScreen.h"
+//#include "bearTime.h"
+//#include "tomPeterson.h"
+//#include "timeScreen.h"
 #include "lsg.h"
-#include "qlocky.h"
-#include "synth999.h"
 
 static const char UserAgent[] PROGMEM = "Watchy";
 
@@ -339,26 +337,22 @@ void WatchyGSR::init(String datetime) {
       if (DefaultWatchStyles) {
         I = AddWatchStyle("Classic GSR");
         I = AddWatchStyle("Ballsy");
-        I = AddWatchStyle("TimeScreen");
+        //I = AddWatchStyle("TimeScreen");
         I = AddWatchStyle("AnalogTz");
-        I = AddWatchStyle("BearTime");
-        I = AddWatchStyle("TomPeterson");
+        //I = AddWatchStyle("BearTime");
+        //I = AddWatchStyle("TomPeterson");
         I = AddWatchStyle("SunGazer");
-        I = AddWatchStyle("Qlocky");
-        I = AddWatchStyle("Synth");
         BasicWatchStyles = I;
       }
       InsertAddWatchStyles();
       if (WatchStyles.Count == 0) {
         I = AddWatchStyle("Classic GSR");
         I = AddWatchStyle("Ballsy");
-        I = AddWatchStyle("TimeScreen");
+        //I = AddWatchStyle("TimeScreen");
         I = AddWatchStyle("AnalogTZ");
-        I = AddWatchStyle("BearTime");
-        I = AddWatchStyle("TomPeterson");
+        //I = AddWatchStyle("BearTime");
+        //I = AddWatchStyle("TomPeterson");
         I = AddWatchStyle("SunGazer");
-        I = AddWatchStyle("Qlocky");
-        I = AddWatchStyle("Synth");
         BasicWatchStyles = I;
         DefaultWatchStyles = true;
       }
@@ -4081,7 +4075,36 @@ void WatchyGSR::initWatchFaceStyle() {
       Design.Status.BATTy = 66;
       break;
       
-    case 2: //TimeScreen
+//     case 2: //TimeScreen
+//       Design.Menu.Top = 72;
+//       Design.Menu.Header = 25;
+//       Design.Menu.Data = 66;
+//       Design.Menu.Font = &aAntiCorona12pt7b;
+//       Design.Face.Time = 56;
+//       Design.Face.TimeHeight = 45;
+//       Design.Face.TimeColor = GxEPD_BLACK;
+//       Design.Face.TimeFont = &aAntiCorona36pt7b;
+//       Design.Face.TimeStyle = WatchyGSR::dCENTER;
+//       Design.Face.Day = 101;
+//       Design.Face.DayColor = GxEPD_BLACK;
+//       Design.Face.DayFont = &aAntiCorona16pt7b;
+//       Design.Face.DayStyle = WatchyGSR::dCENTER;
+//       Design.Face.Date = 143;
+//       Design.Face.DateColor = GxEPD_BLACK;
+//       Design.Face.DateFont = &aAntiCorona15pt7b;
+//       Design.Face.DateStyle = WatchyGSR::dCENTER;
+//       Design.Face.Year = 186;
+//       Design.Face.YearLeft = 99;
+//       Design.Face.YearColor = GxEPD_BLACK;
+//       Design.Face.YearFont = &aAntiCorona16pt7b;
+//       Design.Face.YearStyle = WatchyGSR::dCENTER;
+//       Design.Status.WIFIx = 5;
+//       Design.Status.WIFIy = 193;
+//       Design.Status.BATTx = 155;
+//       Design.Status.BATTy = 178;
+//       break;
+      
+    case 2: // analogTz
       Design.Menu.Top = 72;
       Design.Menu.Header = 25;
       Design.Menu.Data = 66;
@@ -4110,152 +4133,65 @@ void WatchyGSR::initWatchFaceStyle() {
       Design.Status.BATTy = 178;
       break;
       
-    case 3: // analogTz
-      Design.Menu.Top = 72;
-      Design.Menu.Header = 25;
-      Design.Menu.Data = 66;
-      Design.Menu.Font = &aAntiCorona12pt7b;
-      Design.Face.Time = 56;
-      Design.Face.TimeHeight = 45;
-      Design.Face.TimeColor = GxEPD_BLACK;
-      Design.Face.TimeFont = &aAntiCorona36pt7b;
-      Design.Face.TimeStyle = WatchyGSR::dCENTER;
-      Design.Face.Day = 101;
-      Design.Face.DayColor = GxEPD_BLACK;
-      Design.Face.DayFont = &aAntiCorona16pt7b;
-      Design.Face.DayStyle = WatchyGSR::dCENTER;
-      Design.Face.Date = 143;
-      Design.Face.DateColor = GxEPD_BLACK;
-      Design.Face.DateFont = &aAntiCorona15pt7b;
-      Design.Face.DateStyle = WatchyGSR::dCENTER;
-      Design.Face.Year = 186;
-      Design.Face.YearLeft = 99;
-      Design.Face.YearColor = GxEPD_BLACK;
-      Design.Face.YearFont = &aAntiCorona16pt7b;
-      Design.Face.YearStyle = WatchyGSR::dCENTER;
-      Design.Status.WIFIx = 5;
-      Design.Status.WIFIy = 193;
-      Design.Status.BATTx = 155;
-      Design.Status.BATTy = 178;
-      break;
+//     case 4: // BearTime
+//       Design.Menu.Top = 72;
+//       Design.Menu.Header = 25;
+//       Design.Menu.Data = 66;
+//       Design.Menu.Font = &aAntiCorona12pt7b;
+//       Design.Face.Time = 56;
+//       Design.Face.TimeHeight = 45;
+//       Design.Face.TimeColor = GxEPD_BLACK;
+//       Design.Face.TimeFont = &aAntiCorona36pt7b;
+//       Design.Face.TimeStyle = WatchyGSR::dCENTER;
+//       Design.Face.Day = 101;
+//       Design.Face.DayColor = GxEPD_BLACK;
+//       Design.Face.DayFont = &aAntiCorona16pt7b;
+//       Design.Face.DayStyle = WatchyGSR::dCENTER;
+//       Design.Face.Date = 143;
+//       Design.Face.DateColor = GxEPD_BLACK;
+//       Design.Face.DateFont = &aAntiCorona15pt7b;
+//       Design.Face.DateStyle = WatchyGSR::dCENTER;
+//       Design.Face.Year = 186;
+//       Design.Face.YearLeft = 99;
+//       Design.Face.YearColor = GxEPD_BLACK;
+//       Design.Face.YearFont = &aAntiCorona16pt7b;
+//       Design.Face.YearStyle = WatchyGSR::dCENTER;
+//       Design.Status.WIFIx = 5;
+//       Design.Status.WIFIy = 193;
+//       Design.Status.BATTx = 155;
+//       Design.Status.BATTy = 178;
+//       break;
       
-    case 4: // BearTime
-      Design.Menu.Top = 72;
-      Design.Menu.Header = 25;
-      Design.Menu.Data = 66;
-      Design.Menu.Font = &aAntiCorona12pt7b;
-      Design.Face.Time = 56;
-      Design.Face.TimeHeight = 45;
-      Design.Face.TimeColor = GxEPD_BLACK;
-      Design.Face.TimeFont = &aAntiCorona36pt7b;
-      Design.Face.TimeStyle = WatchyGSR::dCENTER;
-      Design.Face.Day = 101;
-      Design.Face.DayColor = GxEPD_BLACK;
-      Design.Face.DayFont = &aAntiCorona16pt7b;
-      Design.Face.DayStyle = WatchyGSR::dCENTER;
-      Design.Face.Date = 143;
-      Design.Face.DateColor = GxEPD_BLACK;
-      Design.Face.DateFont = &aAntiCorona15pt7b;
-      Design.Face.DateStyle = WatchyGSR::dCENTER;
-      Design.Face.Year = 186;
-      Design.Face.YearLeft = 99;
-      Design.Face.YearColor = GxEPD_BLACK;
-      Design.Face.YearFont = &aAntiCorona16pt7b;
-      Design.Face.YearStyle = WatchyGSR::dCENTER;
-      Design.Status.WIFIx = 5;
-      Design.Status.WIFIy = 193;
-      Design.Status.BATTx = 155;
-      Design.Status.BATTy = 178;
-      break;
+//     case 5: // TomPeterson
+//       Design.Menu.Top = 72;
+//       Design.Menu.Header = 25;
+//       Design.Menu.Data = 66;
+//       Design.Menu.Font = &aAntiCorona12pt7b;
+//       Design.Face.Time = 56;
+//       Design.Face.TimeHeight = 45;
+//       Design.Face.TimeColor = GxEPD_BLACK;
+//       Design.Face.TimeFont = &aAntiCorona36pt7b;
+//       Design.Face.TimeStyle = WatchyGSR::dCENTER;
+//       Design.Face.Day = 101;
+//       Design.Face.DayColor = GxEPD_BLACK;
+//       Design.Face.DayFont = &aAntiCorona16pt7b;
+//       Design.Face.DayStyle = WatchyGSR::dCENTER;
+//       Design.Face.Date = 143;
+//       Design.Face.DateColor = GxEPD_BLACK;
+//       Design.Face.DateFont = &aAntiCorona15pt7b;
+//       Design.Face.DateStyle = WatchyGSR::dCENTER;
+//       Design.Face.Year = 186;
+//       Design.Face.YearLeft = 99;
+//       Design.Face.YearColor = GxEPD_BLACK;
+//       Design.Face.YearFont = &aAntiCorona16pt7b;
+//       Design.Face.YearStyle = WatchyGSR::dCENTER;
+//       Design.Status.WIFIx = 5;
+//       Design.Status.WIFIy = 193;
+//       Design.Status.BATTx = 155;
+//       Design.Status.BATTy = 178;
+//       break;
       
-    case 5: // TomPeterson
-      Design.Menu.Top = 72;
-      Design.Menu.Header = 25;
-      Design.Menu.Data = 66;
-      Design.Menu.Font = &aAntiCorona12pt7b;
-      Design.Face.Time = 56;
-      Design.Face.TimeHeight = 45;
-      Design.Face.TimeColor = GxEPD_BLACK;
-      Design.Face.TimeFont = &aAntiCorona36pt7b;
-      Design.Face.TimeStyle = WatchyGSR::dCENTER;
-      Design.Face.Day = 101;
-      Design.Face.DayColor = GxEPD_BLACK;
-      Design.Face.DayFont = &aAntiCorona16pt7b;
-      Design.Face.DayStyle = WatchyGSR::dCENTER;
-      Design.Face.Date = 143;
-      Design.Face.DateColor = GxEPD_BLACK;
-      Design.Face.DateFont = &aAntiCorona15pt7b;
-      Design.Face.DateStyle = WatchyGSR::dCENTER;
-      Design.Face.Year = 186;
-      Design.Face.YearLeft = 99;
-      Design.Face.YearColor = GxEPD_BLACK;
-      Design.Face.YearFont = &aAntiCorona16pt7b;
-      Design.Face.YearStyle = WatchyGSR::dCENTER;
-      Design.Status.WIFIx = 5;
-      Design.Status.WIFIy = 193;
-      Design.Status.BATTx = 155;
-      Design.Status.BATTy = 178;
-      break;
-      
-    case 6: // little sun gazer
-      Design.Menu.Top = 72;
-      Design.Menu.Header = 25;
-      Design.Menu.Data = 66;
-      Design.Menu.Font = &aAntiCorona12pt7b;
-      Design.Face.Time = 56;
-      Design.Face.TimeHeight = 45;
-      Design.Face.TimeColor = GxEPD_BLACK;
-      Design.Face.TimeFont = &aAntiCorona36pt7b;
-      Design.Face.TimeStyle = WatchyGSR::dCENTER;
-      Design.Face.Day = 101;
-      Design.Face.DayColor = GxEPD_BLACK;
-      Design.Face.DayFont = &aAntiCorona16pt7b;
-      Design.Face.DayStyle = WatchyGSR::dCENTER;
-      Design.Face.Date = 143;
-      Design.Face.DateColor = GxEPD_BLACK;
-      Design.Face.DateFont = &aAntiCorona15pt7b;
-      Design.Face.DateStyle = WatchyGSR::dCENTER;
-      Design.Face.Year = 186;
-      Design.Face.YearLeft = 99;
-      Design.Face.YearColor = GxEPD_BLACK;
-      Design.Face.YearFont = &aAntiCorona16pt7b;
-      Design.Face.YearStyle = WatchyGSR::dCENTER;
-      Design.Status.WIFIx = 5;
-      Design.Status.WIFIy = 193;
-      Design.Status.BATTx = 155;
-      Design.Status.BATTy = 178;
-      break;
-      
-      case 7: // qlocky
-      Design.Menu.Top = 72;
-      Design.Menu.Header = 25;
-      Design.Menu.Data = 66;
-      Design.Menu.Font = &aAntiCorona12pt7b;
-      Design.Face.Time = 56;
-      Design.Face.TimeHeight = 45;
-      Design.Face.TimeColor = GxEPD_BLACK;
-      Design.Face.TimeFont = &aAntiCorona36pt7b;
-      Design.Face.TimeStyle = WatchyGSR::dCENTER;
-      Design.Face.Day = 101;
-      Design.Face.DayColor = GxEPD_BLACK;
-      Design.Face.DayFont = &aAntiCorona16pt7b;
-      Design.Face.DayStyle = WatchyGSR::dCENTER;
-      Design.Face.Date = 143;
-      Design.Face.DateColor = GxEPD_BLACK;
-      Design.Face.DateFont = &aAntiCorona15pt7b;
-      Design.Face.DateStyle = WatchyGSR::dCENTER;
-      Design.Face.Year = 186;
-      Design.Face.YearLeft = 99;
-      Design.Face.YearColor = GxEPD_BLACK;
-      Design.Face.YearFont = &aAntiCorona16pt7b;
-      Design.Face.YearStyle = WatchyGSR::dCENTER;
-      Design.Status.WIFIx = 5;
-      Design.Status.WIFIy = 193;
-      Design.Status.BATTx = 155;
-      Design.Status.BATTy = 178;
-      break;
-
-      case 8: // synth
+    case 3: // little sun gazer
       Design.Menu.Top = 72;
       Design.Menu.Header = 25;
       Design.Menu.Data = 66;
@@ -4348,51 +4284,37 @@ void WatchyGSR::drawWatchFaceStyle() {
       }
       if (GuiMode == WATCHON) drawYear();
       break;
-    case 2: // timeScreen
-      if (SafeToDraw()) {
-        drawTimeScreenFace();
-      }
-      if (GuiMode == WATCHON);
-      break;
+//     case 2: // timeScreen
+//       if (SafeToDraw()) {
+//         drawTimeScreenFace();
+//       }
+//       if (GuiMode == WATCHON);
+//       break;
 
-    case 3: // analogTz
+    case 2: // analogTz
       if (SafeToDraw()) {
         drawAnalogTz();
       }
       if (GuiMode == WATCHON);
       break;
 
-    case 4: // bearTime
-      if (SafeToDraw()) {
-        drawBearWatchFace();
-      }
-      if (GuiMode == WATCHON);
-      break;
+//     case 4: // bearTime
+//       if (SafeToDraw()) {
+//         drawBearWatchFace();
+//       }
+//       if (GuiMode == WATCHON);
+//       break;
 
-    case 5: // TomPeterson
-      if (SafeToDraw()) {
-        drawTomPetersonWatchFace();
-      }
-      if (GuiMode == WATCHON);
-      break;
+//     case 5: // TomPeterson
+//       if (SafeToDraw()) {
+//         drawTomPetersonWatchFace();
+//       }
+//       if (GuiMode == WATCHON);
+//       break;
 
-    case 6: // little sun gazer
+    case 3: // little sun gazer
       if (SafeToDraw()) {
         drawLittleSunGazerWatchFace();
-      }
-      if (GuiMode == WATCHON);
-      break;
-
-    case 7: // qlocky
-      if (SafeToDraw()) {
-        drawQlockyWatchFace();
-      }
-      if (GuiMode == WATCHON);
-      break;
-
-      case 8: // synth
-      if (SafeToDraw()) {
-        drawSynthWatchFace();
       }
       if (GuiMode == WATCHON);
       break;
