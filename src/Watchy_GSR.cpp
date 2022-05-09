@@ -1,10 +1,12 @@
 #include "Watchy_GSR.h"
 
 #include "analogTz.h"
-//#include "bearTime.h"
-//#include "tomPeterson.h"
-//#include "timeScreen.h"
+#include "bearTime.h"
+#include "tomPeterson.h"
+#include "timeScreen.h"
 #include "lsg.h"
+#include "qlocky.h"
+#include "synth999.h"
 
 static const char UserAgent[] PROGMEM = "Watchy";
 
@@ -16,6 +18,7 @@ GxEPD2_BW<GxEPD2_154_D67, GxEPD2_154_D67::HEIGHT> WatchyGSR::display(GxEPD2_154_
 
 RTC_DATA_ATTR TimeData WatchTime;
 RTC_DATA_ATTR Optional Options;
+RTC_DATA_ATTR GSRWireless GSRWiFi;
 RTC_DATA_ATTR WeatherUse getWeather;
 RTC_DATA_ATTR weatherData latestWeather;
 //RTC_DATA_ATTR StableBMA sensor;
@@ -48,22 +51,24 @@ long connectMillis = 0; // for weather request
 #define GSettings "GSR-Options"
 #define GTZ "GSR-TZ"
 
-RTC_DATA_ATTR struct GSRWireless final {
-  bool Requested;          // Request WiFi.
-  bool Working;            // Working on getting WiFi.
-  bool Results;            // Results of WiFi, found an AP?
-  uint8_t Index;           // 10 = built-in, roll backwards to 0.
-  uint8_t Requests;        // WiFi Connect requests.
-  struct APInfo {
-    char APID[33];
-    char PASS[64];
-    uint8_t TPWRIndex;
-  } AP[10];                // Using APID to avoid internal confusion with SSID.
-  unsigned long Last;      // Used with millis() to maintain sanity.
-  bool Tried;              // Tried to connect at least once.
-  wifi_power_t TransmitPower;
-  wifi_event_id_t WiFiEventID;
-} GSRWiFi;
+/*
+//RTC_DATA_ATTR struct GSRWireless final {
+//  bool Requested;          // Request WiFi.
+//  bool Working;            // Working on getting WiFi.
+//  bool Results;            // Results of WiFi, found an AP?
+//  uint8_t Index;           // 10 = built-in, roll backwards to 0.
+//  uint8_t Requests;        // WiFi Connect requests.
+//  struct APInfo {
+//    char APID[33];
+//    char PASS[64];
+//    uint8_t TPWRIndex;
+//  } AP[10];                // Using APID to avoid internal confusion with SSID.
+//  unsigned long Last;      // Used with millis() to maintain sanity.
+//  bool Tried;              // Tried to connect at least once.
+//  wifi_power_t TransmitPower;
+//  wifi_event_id_t WiFiEventID;
+//} GSRWiFi;
+*/
 
 RTC_DATA_ATTR struct CPUWork final {
   uint32_t Freq;
@@ -206,8 +211,6 @@ WiFiManager wifiManager;
 HTTPClient HTTP;              // Tz
 Olson2POSIX OP;               // Tz code.
 
-//HTTPClient https;             // Wx
-
 WebServer server(80);
 unsigned long OTATimer;
 bool WatchyAPOn;   // States Watchy's AP is on for connection.  Puts in Active Mode until back happens.
@@ -228,6 +231,7 @@ unsigned long LastButton, OTAFail;
 WatchyGSR::WatchyGSR() {} //constructor
 
 // Init Defaults after a reboot, setup all the variables here for defaults to avoid randomness.
+
 void WatchyGSR::setupDefaults() {
   Options.TwentyFour = false;
   Options.LightMode = true;
@@ -247,6 +251,11 @@ void WatchyGSR::setupDefaults() {
   Steps.Minutes = 0;
   InsertDefaults();
 }
+
+
+/**************************************/
+/*  ADD WATCHFACES STARTING LINES 334 */
+/**************************************/
 
 void WatchyGSR::init(String datetime) {
   uint64_t wakeupBit;
@@ -330,22 +339,26 @@ void WatchyGSR::init(String datetime) {
       if (DefaultWatchStyles) {
         I = AddWatchStyle("Classic GSR");
         I = AddWatchStyle("Ballsy");
-        //I = AddWatchStyle("TimeScreen");
+        I = AddWatchStyle("TimeScreen");
         I = AddWatchStyle("AnalogTz");
-        //I = AddWatchStyle("BearTime");
-        //I = AddWatchStyle("TomPeterson");
+        I = AddWatchStyle("BearTime");
+        I = AddWatchStyle("TomPeterson");
         I = AddWatchStyle("SunGazer");
+        I = AddWatchStyle("Qlocky");
+        I = AddWatchStyle("Synth");
         BasicWatchStyles = I;
       }
       InsertAddWatchStyles();
       if (WatchStyles.Count == 0) {
         I = AddWatchStyle("Classic GSR");
         I = AddWatchStyle("Ballsy");
-        //I = AddWatchStyle("TimeScreen");
+        I = AddWatchStyle("TimeScreen");
         I = AddWatchStyle("AnalogTZ");
-        //I = AddWatchStyle("BearTime");
-        //I = AddWatchStyle("TomPeterson");
+        I = AddWatchStyle("BearTime");
+        I = AddWatchStyle("TomPeterson");
         I = AddWatchStyle("SunGazer");
+        I = AddWatchStyle("Qlocky");
+        I = AddWatchStyle("Synth");
         BasicWatchStyles = I;
         DefaultWatchStyles = true;
       }
@@ -392,7 +405,7 @@ void WatchyGSR::init(String datetime) {
     }
 
     AlarmsOn = (Alarms_Times[0] > 0 || Alarms_Times[1] > 0 || Alarms_Times[2] > 0 || Alarms_Times[3] > 0 || TimerDown.ToneLeft > 0);
-    ActiveMode = (InTurbo() || DarkWait() || NTPData.State > 0 || AlarmsOn || WatchyAPOn || OTAUpdate || NTPData.TimeTest || WatchTime.DeadRTC || GSRWiFi.Requested); 
+    ActiveMode = (InTurbo() || DarkWait() || NTPData.State > 0 || AlarmsOn || WatchyAPOn || OTAUpdate || NTPData.TimeTest || WatchTime.DeadRTC || GSRWiFi.Requested || GSRWiFi.Working); 
     Sensitive = ((OTAUpdate && Menu.SubItem == 3) || (NTPData.TimeTest && Menu.SubItem == 2));
 
     RefreshCPU();
@@ -690,7 +703,7 @@ void WatchyGSR::init(String datetime) {
             }
 
             AlarmsOn = (Alarms_Times[0] > 0 || Alarms_Times[1] > 0 || Alarms_Times[2] > 0 || Alarms_Times[3] > 0 || TimerDown.ToneLeft > 0);
-            ActiveMode = (InTurbo() || DarkWait() || NTPData.State > 0 || AlarmsOn || WatchyAPOn || OTAUpdate || NTPData.TimeTest || WatchTime.DeadRTC || GSRWiFi.Requested);  
+            ActiveMode = (InTurbo() || DarkWait() || NTPData.State > 0 || AlarmsOn || WatchyAPOn || OTAUpdate || NTPData.TimeTest || WatchTime.DeadRTC || GSRWiFi.Requested || GSRWiFi.Working);  
 
             if (WatchTime.DeadRTC && Options.NeedsSaving) RecordSettings();
             RefreshCPU(CPUDEF);
@@ -2505,13 +2518,12 @@ void WatchyGSR::InsertBitmap() {}
 void WatchyGSR::InsertDefaults() {}
 
 void WatchyGSR::InsertOnMinute() {
-  if ( getWeather.updateWx == true && getWeather.wait <=3 ) {
-     getWeather.wait++;
-     //processWiFiRequest();
-    } else {
-      getWeather.updateWx = false;
-      getWeather.wait = 0;
-    }
+  if ( getWeather.updateWx == true && getWeather.wait < 2 ) {
+    getWeather.wait++;
+    if (GSRWiFi.Working) {
+    waitForConnect();
+    }     
+  }
 }
 
 void WatchyGSR::InsertWiFi() {
@@ -2528,9 +2540,9 @@ void WatchyGSR::InsertWiFiEnding() {
   if (USEDEBUG) {
     Serial.println("--- WiFiEnding --- ");
   }  
-//  if (getWeather.updateWx == true) {
+  if (getWeather.updateWx == true) {
     processWxRequest();
- // }  
+  }  
 }
 
 void WatchyGSR::InsertAddWatchStyles() {}
@@ -2787,9 +2799,11 @@ void WatchyGSR::AskForWiFi() {
 
   if (USEDEBUG) {
     Serial.println("--- AskForWiFi Status ---");
+    Serial.println("ActiveMode: " + String(ActiveMode));
     Serial.println("GSRWiFi.Requested " + String(GSRWiFi.Requested));
     Serial.println("GSRWiFi.Working " + String(GSRWiFi.Working));
     Serial.println("currentWiFi(): " + String(currentWiFi()));
+    Serial.println("WiFi.status(): " + String(wl_status_to_string(WiFi.status())));
     Serial.println("GSRWiFi.Results: " + String(GSRWiFi.Results));
     Serial.println("GSRWiFi.Requests: " + String(GSRWiFi.Requests));
     Serial.println("GSRWiFi.Tried: " + String(GSRWiFi.Tried));
@@ -2801,7 +2815,7 @@ void WatchyGSR::AskForWiFi() {
     Serial.println("getWeather.wait: " + String(getWeather.wait));
     Serial.println("getWeather.updateWx: " + String(getWeather.updateWx));
     Serial.println("getWeather.pause: " + String(getWeather.pause));
-    Serial.println("getWeather.count: " + String(getWeather.count));    
+    Serial.println("getWeather.request: " + String(getWeather.request));    
     Serial.println(" ");
   }
 }
@@ -3027,10 +3041,10 @@ void WatchyGSR::initZeros() {
   Menu.SubItem = 0;
   Menu.SubSubItem = 0;
   getWeather.state = 0;     //getWeather
-  getWeather.count = 0;     //getWeather
   getWeather.pause = 0;     //getWeather
   getWeather.wait = 0;      //getWeather
   getWeather.check = false; //getWeather
+  getWeather.request = 0;   //getWeather
   NTPData.Pause = 0;
   NTPData.Wait = 0;
   NTPData.NTPDone = false;
@@ -3484,6 +3498,42 @@ void WatchyGSR::getAngle(uint16_t Angle, uint8_t Away, uint8_t &X, uint8_t &Y) {
   Y = fY;
 }
 
+const char* WatchyGSR::wl_status_to_string(wl_status_t status) {
+  switch (status) {    
+    case WL_IDLE_STATUS: return "WL_IDLE_STATUS";
+    case WL_NO_SSID_AVAIL: return "WL_NO_SSID_AVAIL";
+    case WL_SCAN_COMPLETED: return "WL_SCAN_COMPLETED";
+    case WL_CONNECTED: return "WL_CONNECTED";
+    case WL_CONNECT_FAILED: return "WL_CONNECT_FAILED";
+    case WL_CONNECTION_LOST: return "WL_CONNECTION_LOST";
+    case WL_DISCONNECTED: return "WL_DISCONNECTED";
+    case WL_NO_SHIELD: return "WL_NO_SHIELD";
+  }
+  return EXIT_SUCCESS;
+}
+
+void WatchyGSR::waitForConnect() {
+  #define timeAfter(a,b) ((long(b) - (long)(a) < 0)) 
+  unsigned long timeOut = millis() + 3000; // 3 second timeout
+  int oldStat = -1;
+  int stat = currentWiFi();
+  //int stat = WiFi.status();
+  while (stat != 3 && !timeAfter(millis(), timeOut)) { // 3 = WL_CONNECTED
+    if (stat != oldStat) {
+      oldStat = stat;
+      if (USEDEBUG) {
+        Serial.println("WaitForConnect Status: " + String(stat));
+      }
+      stat = currentWiFi();
+      
+      //stat = WiFi.status();
+    }
+    
+    return;
+  }
+}
+
+
 void WatchyGSR::drawAnalogHand(int16_t rOffset, int16_t width, int16_t len, float angle, bool color) {
   // true = draw white
   // false = draw black
@@ -3511,39 +3561,38 @@ void WatchyGSR::drawAnalogHand(int16_t rOffset, int16_t width, int16_t len, floa
 }
 
 void WatchyGSR::moon_earth(SolarThings &solar, time_t &utc_time, uint16_t &time_zone) {
+  
   uint16_t dColor = Options.LightMode ? GxEPD_WHITE : GxEPD_BLACK;
-  // reduce px by 75%
+  
+  // reduced px by 75%
   short WIDTH = 200; //280
   short BIG_Y = 80; //132 -> approx 1/3 of screen height
   short EARTH_ORBIT = 60;  //80
   short MOON_ORBIT = 30;   //40
   double coordinates[4];
   solar.celestial_bodies((long) utc_time, coordinates);
-
   double feta = atan2(coordinates[0], coordinates[1]);
-
   short sun_center_x = 200 / 2; //280 / 2
   short sun_center_y = BIG_Y;
-
   short earth_x = EARTH_ORBIT * sin(feta) + sun_center_x; 
   short earth_y = BIG_Y - EARTH_ORBIT * cos(feta);  
 
   // set color, draw circle, draw text at loc)
-  display.fillCircle(sun_center_x, sun_center_y, 15, dColor);   // draw sun
+  display.fillCircle(sun_center_x, sun_center_y, 15, dColor);           // draw sun
   display.setFont(&Font12);
   display.setTextColor(dColor);
   display.setCursor(sun_center_x - 3 * 8 / 2, sun_center_y  + 30);
   display.print("sun");
 
-  display.drawCircle(sun_center_x, sun_center_y, EARTH_ORBIT, dColor); // draw earth orbit ring
-  display.fillCircle(earth_x, earth_y, 7, dColor);             // draw earth
+  display.drawCircle(sun_center_x, sun_center_y, EARTH_ORBIT, dColor);  // draw earth orbit ring
+  display.fillCircle(earth_x, earth_y, 7, dColor);                      // draw earth
 
-  display.drawCircle(earth_x, earth_y, MOON_ORBIT, dColor);     // draw moon orbit ring
+  display.drawCircle(earth_x, earth_y, MOON_ORBIT, dColor);             // draw moon orbit ring
 
   feta = atan2(coordinates[2], coordinates[3]);
-  short moon_x = earth_x + MOON_ORBIT * (-1 * sin(feta)); // -1 to rotate 180° for different display geometry
-  short moon_y = earth_y - MOON_ORBIT * (-1 * cos(feta)); // -1 to rotate 180°  
-  display.fillCircle(moon_x, moon_y, 5, dColor);                // draw moon
+  short moon_x = earth_x + MOON_ORBIT * (-1 * sin(feta));               // -1 to rotate 180° for different display geometry
+  short moon_y = earth_y - MOON_ORBIT * (-1 * cos(feta));               // -1 to rotate 180°  
+  display.fillCircle(moon_x, moon_y, 5, dColor);                        // draw moon
   if (moon_y > earth_y) {
     display.setTextColor(dColor);
     display.setFont(&Font12);
@@ -3648,40 +3697,41 @@ int WatchyGSR::rtcTemp() {
 
 void WatchyGSR::processWxRequest() {
     if (USEDEBUG) {
-    Serial.println(" ");
-    Serial.println("------WxRequest Status------");
-    Serial.println("currentWiFi(): " + String(currentWiFi()));
-    Serial.println("NTPData.TimeTest: " + String(NTPData.TimeTest));
-    Serial.println("GSRWiFiRequested: " + String(GSRWiFi.Requested));
-    Serial.println("GSRWiFi.Working: " + String(GSRWiFi.Working));
-    Serial.println("GSRWiFi.Results: " + String(GSRWiFi.Results));
-    Serial.println("GSRWiFi.Requests: " + String(GSRWiFi.Requests));
-    Serial.println("NTPData.State: " + String(NTPData.State));
-    Serial.println("OTAUpdate: " + String(OTAUpdate));
-    Serial.println("WatchyAPOn: " + String(WatchyAPOn));
-    Serial.println("getWeather.state: " + String(getWeather.state));
-    Serial.println("getWeather.wait: " + String(getWeather.wait));
-    Serial.println("getWeather.updateWx: " + String(getWeather.updateWx));
-    Serial.println("getWeather.pause: " + String(getWeather.pause));
-    Serial.println("getWeather.count: " + String(getWeather.count));    
-    Serial.println(" ");
+      Serial.println(" ");
+      Serial.println("------WxRequest Status------");
+      Serial.println("ActiveMode: " + String(ActiveMode));
+      Serial.println("currentWiFi(): " + String(currentWiFi()));
+      Serial.println("WiFi.status(): " + String(wl_status_to_string(WiFi.status())));
+      Serial.println("NTPData.TimeTest: " + String(NTPData.TimeTest));
+      Serial.println("GSRWiFiRequested: " + String(GSRWiFi.Requested));
+      Serial.println("GSRWiFi.Working: " + String(GSRWiFi.Working));
+      Serial.println("GSRWiFi.Results: " + String(GSRWiFi.Results));
+      Serial.println("GSRWiFi.Requests: " + String(GSRWiFi.Requests));
+      Serial.println("NTPData.State: " + String(NTPData.State));
+      Serial.println("OTAUpdate: " + String(OTAUpdate));
+      Serial.println("WatchyAPOn: " + String(WatchyAPOn));
+      Serial.println("getWeather.state: " + String(getWeather.state));
+      Serial.println("getWeather.wait: " + String(getWeather.wait));
+      Serial.println("getWeather.updateWx: " + String(getWeather.updateWx));
+      Serial.println("getWeather.pause: " + String(getWeather.pause));
+      Serial.println(" ");
   }
-switch (getWeather.state) {
+switch (getWeather.state) 
+{
     // Start WiFi and Connect.
-    case 1: {
-        HTTP.setUserAgent(UserAgent);        
+    case 1: 
+    {
+        HTTP.setUserAgent(UserAgent);
+        AskForWiFi();        
         if (WiFi.status() != WL_CONNECTED) {
           if (currentWiFi() == WL_CONNECT_FAILED) {
             getWeather.pause = 0;
             getWeather.state = 99;
-            getWeather.count++;
             break;
-          }
-        AskForWiFi();
-        getWeather.pause = 3;
-        getWeather.count++;
+          }          
+        waitForConnect();
         break;
-        }        
+        }                        
         getWeather.wait = 0;
         getWeather.pause = 0;
         getWeather.state++;
@@ -3694,8 +3744,7 @@ switch (getWeather.state) {
         if (WiFi.status() != WL_CONNECTED) {
           if (currentWiFi() == WL_CONNECT_FAILED) {
             getWeather.pause = 0;
-            getWeather.state = 99;
-            getWeather.count++;
+            getWeather.state = 99;            
             break;
           }
           getWeather.pause = 3;
@@ -3704,6 +3753,7 @@ switch (getWeather.state) {
             getWeather.state = 99;
             break;
           }
+          waitForConnect(); 
           break;
         }
         // connected so
@@ -3712,6 +3762,9 @@ switch (getWeather.state) {
         getWeather.wait = 0;
         getWeather.pause = 0;
         weatherData latestWeather = askForWeather();
+        if (USEDEBUG) {
+          Serial.println("Wx Returned");
+        }
         
         // Process weather.
         if (showCached == false && getWeather.check != true) { // if the wifi request failed get out          
@@ -3743,10 +3796,14 @@ switch (getWeather.state) {
         } else if (weatherConditionCode >= 200) { //Thunderstorm
           tempCondition = "THUNDER";
         }
-        if (getWeather.check) setStatus(""); // Clear status once it is done.
+        if (USEDEBUG) {
+          Serial.println("tempCondition: " + tempCondition);
+          Serial.println("Temp: " + String(rawTemperature));
+        }
+        //if (getWeather.check) setStatus(""); // Clear status once it is done.
         getWeather.state = 99;
         endWiFi();        
-        //break;
+        break;
       }
 
 /*
@@ -3838,19 +3895,17 @@ switch (getWeather.state) {
         temperature = (weatherFormat) ? (int)(rtcTemperature * 9. / 5. + 32.) : rtcTemperature;
       }
       
-//      OTAEnd = true; // ends wifi and everything OTA
-//      SNTP.End();
-//      if (getWeather.count >= 10) {
-//      getWeather.count = 0;
-//      }
       getWeather.wait = 0;
       getWeather.pause = 0;
       getWeather.state = 0;
       getWeather.check = 0;
+      getWeather.request = 0;
       getWeather.updateWx = 0;      
         
       if (getWeather.check) setStatus(""); // Clear status once it is done.
-      //Battery.UpCount = 0; // Stop it from thinking the battery went wild.
+      if (USEDEBUG) {
+        Serial.println("getWeather.state = 99");
+      }
 
       }
   }
@@ -3925,7 +3980,6 @@ void WatchyGSR::drawWeather() {
 /************ GET WEATHER *****************/
 //****************************************//
 weatherData WatchyGSR::askForWeather() {
-  getWeather.count++;
   
   if (USEDEBUG) {
     Serial.println("askForWeather()");
@@ -4026,35 +4080,8 @@ void WatchyGSR::initWatchFaceStyle() {
       Design.Status.BATTx = 120;
       Design.Status.BATTy = 66;
       break;
-//     case 2: //TimeScreen
-//       Design.Menu.Top = 72;
-//       Design.Menu.Header = 25;
-//       Design.Menu.Data = 66;
-//       Design.Menu.Font = &aAntiCorona12pt7b;
-//       Design.Face.Time = 56;
-//       Design.Face.TimeHeight = 45;
-//       Design.Face.TimeColor = GxEPD_BLACK;
-//       Design.Face.TimeFont = &aAntiCorona36pt7b;
-//       Design.Face.TimeStyle = WatchyGSR::dCENTER;
-//       Design.Face.Day = 101;
-//       Design.Face.DayColor = GxEPD_BLACK;
-//       Design.Face.DayFont = &aAntiCorona16pt7b;
-//       Design.Face.DayStyle = WatchyGSR::dCENTER;
-//       Design.Face.Date = 143;
-//       Design.Face.DateColor = GxEPD_BLACK;
-//       Design.Face.DateFont = &aAntiCorona15pt7b;
-//       Design.Face.DateStyle = WatchyGSR::dCENTER;
-//       Design.Face.Year = 186;
-//       Design.Face.YearLeft = 99;
-//       Design.Face.YearColor = GxEPD_BLACK;
-//       Design.Face.YearFont = &aAntiCorona16pt7b;
-//       Design.Face.YearStyle = WatchyGSR::dCENTER;
-//       Design.Status.WIFIx = 5;
-//       Design.Status.WIFIy = 193;
-//       Design.Status.BATTx = 155;
-//       Design.Status.BATTy = 178;
-//       break;
-    case 2: // analogTz
+      
+    case 2: //TimeScreen
       Design.Menu.Top = 72;
       Design.Menu.Header = 25;
       Design.Menu.Data = 66;
@@ -4082,63 +4109,8 @@ void WatchyGSR::initWatchFaceStyle() {
       Design.Status.BATTx = 155;
       Design.Status.BATTy = 178;
       break;
-//     case 4: // BearTime
-//       Design.Menu.Top = 72;
-//       Design.Menu.Header = 25;
-//       Design.Menu.Data = 66;
-//       Design.Menu.Font = &aAntiCorona12pt7b;
-//       Design.Face.Time = 56;
-//       Design.Face.TimeHeight = 45;
-//       Design.Face.TimeColor = GxEPD_BLACK;
-//       Design.Face.TimeFont = &aAntiCorona36pt7b;
-//       Design.Face.TimeStyle = WatchyGSR::dCENTER;
-//       Design.Face.Day = 101;
-//       Design.Face.DayColor = GxEPD_BLACK;
-//       Design.Face.DayFont = &aAntiCorona16pt7b;
-//       Design.Face.DayStyle = WatchyGSR::dCENTER;
-//       Design.Face.Date = 143;
-//       Design.Face.DateColor = GxEPD_BLACK;
-//       Design.Face.DateFont = &aAntiCorona15pt7b;
-//       Design.Face.DateStyle = WatchyGSR::dCENTER;
-//       Design.Face.Year = 186;
-//       Design.Face.YearLeft = 99;
-//       Design.Face.YearColor = GxEPD_BLACK;
-//       Design.Face.YearFont = &aAntiCorona16pt7b;
-//       Design.Face.YearStyle = WatchyGSR::dCENTER;
-//       Design.Status.WIFIx = 5;
-//       Design.Status.WIFIy = 193;
-//       Design.Status.BATTx = 155;
-//       Design.Status.BATTy = 178;
-//       break;
-//     case 5: // TomPeterson
-//       Design.Menu.Top = 72;
-//       Design.Menu.Header = 25;
-//       Design.Menu.Data = 66;
-//       Design.Menu.Font = &aAntiCorona12pt7b;
-//       Design.Face.Time = 56;
-//       Design.Face.TimeHeight = 45;
-//       Design.Face.TimeColor = GxEPD_BLACK;
-//       Design.Face.TimeFont = &aAntiCorona36pt7b;
-//       Design.Face.TimeStyle = WatchyGSR::dCENTER;
-//       Design.Face.Day = 101;
-//       Design.Face.DayColor = GxEPD_BLACK;
-//       Design.Face.DayFont = &aAntiCorona16pt7b;
-//       Design.Face.DayStyle = WatchyGSR::dCENTER;
-//       Design.Face.Date = 143;
-//       Design.Face.DateColor = GxEPD_BLACK;
-//       Design.Face.DateFont = &aAntiCorona15pt7b;
-//       Design.Face.DateStyle = WatchyGSR::dCENTER;
-//       Design.Face.Year = 186;
-//       Design.Face.YearLeft = 99;
-//       Design.Face.YearColor = GxEPD_BLACK;
-//       Design.Face.YearFont = &aAntiCorona16pt7b;
-//       Design.Face.YearStyle = WatchyGSR::dCENTER;
-//       Design.Status.WIFIx = 5;
-//       Design.Status.WIFIy = 193;
-//       Design.Status.BATTx = 155;
-//       Design.Status.BATTy = 178;
-//       break;
-    case 3: // little sun gazer
+      
+    case 3: // analogTz
       Design.Menu.Top = 72;
       Design.Menu.Header = 25;
       Design.Menu.Data = 66;
@@ -4166,6 +4138,152 @@ void WatchyGSR::initWatchFaceStyle() {
       Design.Status.BATTx = 155;
       Design.Status.BATTy = 178;
       break;
+      
+    case 4: // BearTime
+      Design.Menu.Top = 72;
+      Design.Menu.Header = 25;
+      Design.Menu.Data = 66;
+      Design.Menu.Font = &aAntiCorona12pt7b;
+      Design.Face.Time = 56;
+      Design.Face.TimeHeight = 45;
+      Design.Face.TimeColor = GxEPD_BLACK;
+      Design.Face.TimeFont = &aAntiCorona36pt7b;
+      Design.Face.TimeStyle = WatchyGSR::dCENTER;
+      Design.Face.Day = 101;
+      Design.Face.DayColor = GxEPD_BLACK;
+      Design.Face.DayFont = &aAntiCorona16pt7b;
+      Design.Face.DayStyle = WatchyGSR::dCENTER;
+      Design.Face.Date = 143;
+      Design.Face.DateColor = GxEPD_BLACK;
+      Design.Face.DateFont = &aAntiCorona15pt7b;
+      Design.Face.DateStyle = WatchyGSR::dCENTER;
+      Design.Face.Year = 186;
+      Design.Face.YearLeft = 99;
+      Design.Face.YearColor = GxEPD_BLACK;
+      Design.Face.YearFont = &aAntiCorona16pt7b;
+      Design.Face.YearStyle = WatchyGSR::dCENTER;
+      Design.Status.WIFIx = 5;
+      Design.Status.WIFIy = 193;
+      Design.Status.BATTx = 155;
+      Design.Status.BATTy = 178;
+      break;
+      
+    case 5: // TomPeterson
+      Design.Menu.Top = 72;
+      Design.Menu.Header = 25;
+      Design.Menu.Data = 66;
+      Design.Menu.Font = &aAntiCorona12pt7b;
+      Design.Face.Time = 56;
+      Design.Face.TimeHeight = 45;
+      Design.Face.TimeColor = GxEPD_BLACK;
+      Design.Face.TimeFont = &aAntiCorona36pt7b;
+      Design.Face.TimeStyle = WatchyGSR::dCENTER;
+      Design.Face.Day = 101;
+      Design.Face.DayColor = GxEPD_BLACK;
+      Design.Face.DayFont = &aAntiCorona16pt7b;
+      Design.Face.DayStyle = WatchyGSR::dCENTER;
+      Design.Face.Date = 143;
+      Design.Face.DateColor = GxEPD_BLACK;
+      Design.Face.DateFont = &aAntiCorona15pt7b;
+      Design.Face.DateStyle = WatchyGSR::dCENTER;
+      Design.Face.Year = 186;
+      Design.Face.YearLeft = 99;
+      Design.Face.YearColor = GxEPD_BLACK;
+      Design.Face.YearFont = &aAntiCorona16pt7b;
+      Design.Face.YearStyle = WatchyGSR::dCENTER;
+      Design.Status.WIFIx = 5;
+      Design.Status.WIFIy = 193;
+      Design.Status.BATTx = 155;
+      Design.Status.BATTy = 178;
+      break;
+      
+    case 6: // little sun gazer
+      Design.Menu.Top = 72;
+      Design.Menu.Header = 25;
+      Design.Menu.Data = 66;
+      Design.Menu.Font = &aAntiCorona12pt7b;
+      Design.Face.Time = 56;
+      Design.Face.TimeHeight = 45;
+      Design.Face.TimeColor = GxEPD_BLACK;
+      Design.Face.TimeFont = &aAntiCorona36pt7b;
+      Design.Face.TimeStyle = WatchyGSR::dCENTER;
+      Design.Face.Day = 101;
+      Design.Face.DayColor = GxEPD_BLACK;
+      Design.Face.DayFont = &aAntiCorona16pt7b;
+      Design.Face.DayStyle = WatchyGSR::dCENTER;
+      Design.Face.Date = 143;
+      Design.Face.DateColor = GxEPD_BLACK;
+      Design.Face.DateFont = &aAntiCorona15pt7b;
+      Design.Face.DateStyle = WatchyGSR::dCENTER;
+      Design.Face.Year = 186;
+      Design.Face.YearLeft = 99;
+      Design.Face.YearColor = GxEPD_BLACK;
+      Design.Face.YearFont = &aAntiCorona16pt7b;
+      Design.Face.YearStyle = WatchyGSR::dCENTER;
+      Design.Status.WIFIx = 5;
+      Design.Status.WIFIy = 193;
+      Design.Status.BATTx = 155;
+      Design.Status.BATTy = 178;
+      break;
+      
+      case 7: // qlocky
+      Design.Menu.Top = 72;
+      Design.Menu.Header = 25;
+      Design.Menu.Data = 66;
+      Design.Menu.Font = &aAntiCorona12pt7b;
+      Design.Face.Time = 56;
+      Design.Face.TimeHeight = 45;
+      Design.Face.TimeColor = GxEPD_BLACK;
+      Design.Face.TimeFont = &aAntiCorona36pt7b;
+      Design.Face.TimeStyle = WatchyGSR::dCENTER;
+      Design.Face.Day = 101;
+      Design.Face.DayColor = GxEPD_BLACK;
+      Design.Face.DayFont = &aAntiCorona16pt7b;
+      Design.Face.DayStyle = WatchyGSR::dCENTER;
+      Design.Face.Date = 143;
+      Design.Face.DateColor = GxEPD_BLACK;
+      Design.Face.DateFont = &aAntiCorona15pt7b;
+      Design.Face.DateStyle = WatchyGSR::dCENTER;
+      Design.Face.Year = 186;
+      Design.Face.YearLeft = 99;
+      Design.Face.YearColor = GxEPD_BLACK;
+      Design.Face.YearFont = &aAntiCorona16pt7b;
+      Design.Face.YearStyle = WatchyGSR::dCENTER;
+      Design.Status.WIFIx = 5;
+      Design.Status.WIFIy = 193;
+      Design.Status.BATTx = 155;
+      Design.Status.BATTy = 178;
+      break;
+
+      case 8: // synth
+      Design.Menu.Top = 72;
+      Design.Menu.Header = 25;
+      Design.Menu.Data = 66;
+      Design.Menu.Font = &aAntiCorona12pt7b;
+      Design.Face.Time = 56;
+      Design.Face.TimeHeight = 45;
+      Design.Face.TimeColor = GxEPD_BLACK;
+      Design.Face.TimeFont = &aAntiCorona36pt7b;
+      Design.Face.TimeStyle = WatchyGSR::dCENTER;
+      Design.Face.Day = 101;
+      Design.Face.DayColor = GxEPD_BLACK;
+      Design.Face.DayFont = &aAntiCorona16pt7b;
+      Design.Face.DayStyle = WatchyGSR::dCENTER;
+      Design.Face.Date = 143;
+      Design.Face.DateColor = GxEPD_BLACK;
+      Design.Face.DateFont = &aAntiCorona15pt7b;
+      Design.Face.DateStyle = WatchyGSR::dCENTER;
+      Design.Face.Year = 186;
+      Design.Face.YearLeft = 99;
+      Design.Face.YearColor = GxEPD_BLACK;
+      Design.Face.YearFont = &aAntiCorona16pt7b;
+      Design.Face.YearStyle = WatchyGSR::dCENTER;
+      Design.Status.WIFIx = 5;
+      Design.Status.WIFIy = 193;
+      Design.Status.BATTx = 155;
+      Design.Status.BATTy = 178;
+      break;
+      
     default:
       Design.Menu.Top = 72;
       Design.Menu.Header = 25;
@@ -4230,41 +4348,55 @@ void WatchyGSR::drawWatchFaceStyle() {
       }
       if (GuiMode == WATCHON) drawYear();
       break;
-//     case 2: // timeScreen
-//       if (SafeToDraw()) {
-//         drawTimeScreenFace();
-//       }
-//       if (GuiMode == WATCHON);
-//       break;
+    case 2: // timeScreen
+      if (SafeToDraw()) {
+        drawTimeScreenFace();
+      }
+      if (GuiMode == WATCHON);
+      break;
 
-    case 2: // analogTz
+    case 3: // analogTz
       if (SafeToDraw()) {
         drawAnalogTz();
       }
       if (GuiMode == WATCHON);
       break;
 
-//     case 4: // bearTime
-//       if (SafeToDraw()) {
-//         drawBearWatchFace();
-//       }
-//       if (GuiMode == WATCHON);
-//       break;
+    case 4: // bearTime
+      if (SafeToDraw()) {
+        drawBearWatchFace();
+      }
+      if (GuiMode == WATCHON);
+      break;
 
-//     case 5: // TomPeterson
-//       if (SafeToDraw()) {
-//         drawTomPetersonWatchFace();
-//       }
-//       if (GuiMode == WATCHON);
-//       break;
+    case 5: // TomPeterson
+      if (SafeToDraw()) {
+        drawTomPetersonWatchFace();
+      }
+      if (GuiMode == WATCHON);
+      break;
 
-    case 3: // little sun gazer
+    case 6: // little sun gazer
       if (SafeToDraw()) {
         drawLittleSunGazerWatchFace();
       }
       if (GuiMode == WATCHON);
       break;
 
+    case 7: // qlocky
+      if (SafeToDraw()) {
+        drawQlockyWatchFace();
+      }
+      if (GuiMode == WATCHON);
+      break;
+
+      case 8: // synth
+      if (SafeToDraw()) {
+        drawSynthWatchFace();
+      }
+      if (GuiMode == WATCHON);
+      break;
+    
     default:
       if (SafeToDraw()) {
         drawTime();
