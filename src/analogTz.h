@@ -36,6 +36,9 @@ if (batt > 0) {
   display.fillRoundRect(142, 32, 26 * batt, 4, 2, (!Options.LightMode ? GxEPD_BLACK : GxEPD_WHITE)); //x+5
 }
 
+if (getWeather.request > 0) {
+  
+}
 // Weather & Temp
 // renew every 30 minutes - show last in meantime
 if (WatchTime.Local.Minute % 30 == 0) {
@@ -43,16 +46,16 @@ if (WatchTime.Local.Minute % 30 == 0) {
       Serial.println(String(WatchTime.Local.Hour)+String(WatchTime.Local.Minute));
       Serial.println("---Time for weather---");  
     }
-    
+    if (!getWeather.request <= 2) { 
     showCached = false;
     getWeather.updateWx = true;
-//    getWeather.wait = 0;
-    getWeather.state = 1;
-    AskForWiFi();    
-  } //else {
-    //getWeather.state = 0;
-    //showCached = true;  
-//}
+    getWeather.request++;
+    getWeather.state = 1;    
+    processWxRequest();
+    //AskForWiFi();    
+  } else getWeather.state = 99;
+    processWxRequest();
+} 
 
 //Weather Icon
   const unsigned char* weatherIcon;
