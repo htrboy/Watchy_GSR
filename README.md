@@ -1,7 +1,9 @@
 **NOTE:**
 This branch has substantial changes to where code is located.  This is to allow encapsulating a watchface inside a header file and making use of functionality in the main code from inside the watchface file.
 
-**GURUSR's notes follow:**
+
+**GURU_SR's notes follow:**
+
 This repo's format:
 
 Bin folder contains the current OTA Bin that you can use a tool to upload with or an OTA Upgrade capable firmware to install the current OTA Bin to the Watchy.
