@@ -49,25 +49,6 @@ long connectMillis = 0; // for weather request
 #define GSettings "GSR-Options"
 #define GTZ "GSR-TZ"
 
-/*
-//RTC_DATA_ATTR struct GSRWireless final {
-//  bool Requested;          // Request WiFi.
-//  bool Working;            // Working on getting WiFi.
-//  bool Results;            // Results of WiFi, found an AP?
-//  uint8_t Index;           // 10 = built-in, roll backwards to 0.
-//  uint8_t Requests;        // WiFi Connect requests.
-//  struct APInfo {
-//    char APID[33];
-//    char PASS[64];
-//    uint8_t TPWRIndex;
-//  } AP[10];                // Using APID to avoid internal confusion with SSID.
-//  unsigned long Last;      // Used with millis() to maintain sanity.
-//  bool Tried;              // Tried to connect at least once.
-//  wifi_power_t TransmitPower;
-//  wifi_event_id_t WiFiEventID;
-//} GSRWiFi;
-*/
-
 RTC_DATA_ATTR struct CPUWork final {
   uint32_t Freq;
   bool     Locked;
@@ -3800,83 +3781,6 @@ switch (getWeather.state)
         break;
       }
 
-/*
-//    case 3: {      
-//        // Process weather.
-//        if (showCached == false && getWeather.check != true) { // if the wifi request failed get out          
-//          getWeather.state = 99;
-//          break;
-//        } else {
-//          temperature = (weatherFormat) ? (int)(rawTemperature * 9. / 5. + 32.) : rawTemperature;
-//          rawTemperature = latestWeather.temperature; //
-//          weatherConditionCode = latestWeather.weatherConditionCode;
-//        }
-//        String tempCondition;      
-//        //https://openweathermap.org/weather-conditions
-//        if (weatherConditionCode == 999) { //RTC
-//          tempCondition = "AMBIENT";
-//        } else if (weatherConditionCode > 801 && weatherConditionCode < 805) { //Cloudy
-//          tempCondition = "CLOUDY";
-//        } else if (weatherConditionCode == 801) { //Few Clouds
-//          tempCondition = "CLOUDS";
-//        } else if (weatherConditionCode == 800) { //Clear
-//          tempCondition = "CLEAR SKY";
-//        } else if (weatherConditionCode >= 700) { //Atmosphere
-//          tempCondition = "MISTY";
-//        } else if (weatherConditionCode >= 600) { //Snow
-//          tempCondition = "SNOW";
-//        } else if (weatherConditionCode >= 500) { //Rain
-//          tempCondition = "RAIN";
-//        } else if (weatherConditionCode >= 300) { //Drizzle
-//          tempCondition = "DRIZZLE";
-//        } else if (weatherConditionCode >= 200) { //Thunderstorm
-//          tempCondition = "THUNDER";
-//        }
-//        if (getWeather.check) setStatus(""); // Clear status once it is done.
-//        getWeather.state = 99;
-//        //if (!getWeather.updateWx) UpdateDisp = Showing(); // watch this for probs
-//        break;
-//      }
-    
-
-/*
-    case 4: {
-        if (getWeather.updateWx == false || WiFi.status() == WL_DISCONNECTED || getWeather.wait > 0) {
-          getWeather.state = 99;
-          getWeather.pause = 0;
-          break;
-        }
-        NTPData.NTPDone = false;
-        setStatus("NTP");
-        SNTP.Begin(InsertNTPServer()); //"132.246.11.237","132.246.11.227");
-        NTPData.Wait = 0;
-        NTPData.Pause = 20;
-        NTPData.State++;
-        break;
-      }
-
-    case 6: {
-        //if (time(nullptr) < 1000000000l){
-        if (!SNTP.Query()) {
-          if (NTPData.Wait > 0) {
-            NTPData.Pause = 0;
-            NTPData.State = 99;
-          }
-          break;
-        }
-        WatchTime.UTC_RAW = SNTP.Results;
-        WatchTime.UTC = SNTP.tmResults;
-        SRTC.set(WatchTime.UTC);
-        WatchTime.Drifting = 0;
-        WatchTime.EPSMS = (millis() + (1000 * (60 - WatchTime.UTC.Second)));
-        WatchTime.WatchyRTC = esp_timer_get_time() + ((60 - WatchTime.UTC.Second) * 1000000);
-        NTPData.NTPDone = true;
-        NTPData.Pause = 0;
-        NTPData.State = 99;
-        break;
-      }
-*/
-
     case 99: {
       // WeatherCheck failed so display RTC and get out
       if (getWeather.check == false) {
@@ -3904,72 +3808,6 @@ switch (getWeather.state)
       }
   }
 }
-
-/*
-void WatchyGSR::drawWeather() {
-
-  if (USEDEBUG) {
-    Serial.println("drawWeather() ");
-  }
-  // moved to processWx()
-  //weatherData latestWeather = askForWeather();
-
-  if (USEDEBUG) {
-    Serial.println("temp: " + String(latestWeather.temperature));
-    Serial.println("code: " + String(latestWeather.weatherConditionCode));
-  }
-
-// moved to processWx()
-//  if (showCached == false) {
-//    rawTemperature = latestWeather.temperature; //
-//    weatherConditionCode = latestWeather.weatherConditionCode;
-//  }
-
-  if (getWeather.check == false) {
-    rtcTemperature = rtcTemp() - ambientOffset;
-    weatherConditionCode = 999;
-    cityNameID = 999;
-    latestWeather.weatherConditionCode = weatherConditionCode;
-    temperature = (weatherFormat) ? (int)(rtcTemperature * 9. / 5. + 32.) : rtcTemperature;
-  } else {
-    temperature = (weatherFormat) ? (int)(rawTemperature * 9. / 5. + 32.) : rawTemperature;
-  }
-
-  String tempCondition;
-
-  //https://openweathermap.org/weather-conditions
-  if (weatherConditionCode == 999) { //RTC
-    tempCondition = "AMBIENT";
-  } else if (weatherConditionCode > 801 && weatherConditionCode < 805) { //Cloudy
-    tempCondition = "CLOUDY";
-  } else if (weatherConditionCode == 801) { //Few Clouds
-    tempCondition = "CLOUDS";
-  } else if (weatherConditionCode == 800) { //Clear
-    tempCondition = "CLEAR SKY";
-  } else if (weatherConditionCode >= 700) { //Atmosphere
-    tempCondition = "MISTY";
-  } else if (weatherConditionCode >= 600) { //Snow
-    tempCondition = "SNOW";
-  } else if (weatherConditionCode >= 500) { //Rain
-    tempCondition = "RAIN";
-  } else if (weatherConditionCode >= 300) { //Drizzle
-    tempCondition = "DRIZZLE";
-  } else if (weatherConditionCode >= 200) { //Thunderstorm
-    tempCondition = "THUNDER";
-  }
-
-  if (USEDEBUG) {
-    Serial.println("drawWeather: ");
-    Serial.println("temperature: " + String(latestWeather.temperature));
-    Serial.println("weather code: " + String(latestWeather.weatherConditionCode));
-    Serial.println("weatherCheck: " + String(getWeather.check));
-    //Serial.println("cityName: " + String(noAlpha(getCityName())));
-  }
-  //getWeather.state = 0;
-  //getWeather.updateWx = false;
-  return;
-}
-*/
 
 /************ GET WEATHER *****************/
 //****************************************//
