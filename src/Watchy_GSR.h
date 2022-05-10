@@ -55,6 +55,23 @@ extern RTC_DATA_ATTR struct TimeData final {
     bool BedTime;             // If the hour is within the Bed Time settings.
 } WatchTime;
 
+extern RTC_DATA_ATTR struct GSRWireless final {
+  bool Requested;          // Request WiFi.
+  bool Working;            // Working on getting WiFi.
+  bool Results;            // Results of WiFi, found an AP?
+  uint8_t Index;           // 10 = built-in, roll backwards to 0.
+  uint8_t Requests;        // WiFi Connect requests.
+  struct APInfo {
+    char APID[33];
+    char PASS[64];
+    uint8_t TPWRIndex;
+  } AP[10];                // Using APID to avoid internal confusion with SSID.
+  unsigned long Last;      // Used with millis() to maintain sanity.
+  bool Tried;              // Tried to connect at least once.
+  wifi_power_t TransmitPower;
+  wifi_event_id_t WiFiEventID;
+} GSRWiFi;
+
 extern RTC_DATA_ATTR struct Optional final {
     bool TwentyFour;                  // If the face shows 24 hour or Am/Pm.
     bool LightMode;                    // Light/Dark mode.
