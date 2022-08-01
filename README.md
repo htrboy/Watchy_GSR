@@ -1,5 +1,5 @@
 **NOTE:**
-This branch has substantial changes to where code is located.  This is to allow encapsulating a watchface inside a header file and making use of functionality in the main code from inside the watchface file.
+This branch has made some changes to allow encapsulating a watchface inside a header file and making use of functionality in the main code from inside the watchface file.  To add a watchface, fonts and icons can be added to 'myResources.h', alter the 'main.cpp/.ino' file per GuruSR's instructions, and add the 'drawMyWatchFace()' function definition to 'Watchy_GSR.h' in the public list.
 
 
 **GURU_SR's notes follow:**
